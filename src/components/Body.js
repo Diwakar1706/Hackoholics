@@ -5,6 +5,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import Login from './login'
 import Browse from './Browse'
+import LandingComponent from './landingComponent';
 
 
 const Body = () => {
@@ -17,7 +18,12 @@ const Body = () => {
     {
         path: "/browse",
         element: <Browse/>
+    },
+    {
+        path: "/LandingPage",
+        element: <LandingComponent/>
     }
+
    ]);
  
  

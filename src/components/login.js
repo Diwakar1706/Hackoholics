@@ -5,12 +5,15 @@ import React, { useState } from 'react';
 import { auth } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import Header from './Header';
+import { Link, useNavigate } from 'react-router-dom';
+import LandingComponent from './landingComponent';
 
 const Login = () => {
   const [isSignInForm, setIsSignInForm] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const navigate = useNavigate();
 
   // Toggle between Sign In and Sign Up
   const toggleSignInForm = () => setIsSignInForm(!isSignInForm);
@@ -29,10 +32,12 @@ const Login = () => {
         // Sign In
         await signInWithEmailAndPassword(auth, email, password);
         alert("✅ Signed In Successfully!");
+        navigate("/LandingPage"); 
       } else {
         // Sign Up
         await createUserWithEmailAndPassword(auth, email, password);
         alert("✅ Account Created Successfully!");
+        navigate("/LandingPage");
       }
     } catch (error) {
       alert("❌ " + error.message); // Display any Firebase error message
@@ -110,6 +115,10 @@ const Login = () => {
             ? "New to Eco-Move? Sign Up Now"
             : "Already have an account? Sign In Now"}
         </p>
+        <div>
+          <Link to="/LandingPage" className="text-center text-sm text-white font-semibold rounded hover:underline">Continue Without Login</Link>
+        </div>
+        
       </form>
     </div>
   );
