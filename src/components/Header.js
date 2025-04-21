@@ -22,7 +22,7 @@ const Header = () => {
     <div className="absolute px-10 py-2 z-10 flex justify-between items-center w-full text-white">
       <img className="w-48" src="/EcoMove-removebg-preview.png" alt="Logo" />
 
-      {user ? (
+      {/* {user ? (
         <div className="flex items-center gap-4">
           <span className="hidden sm:inline">Welcome, {user.email}</span>
           <button
@@ -34,7 +34,7 @@ const Header = () => {
         </div>
       ) : (
         <p className="text-sm">Not signed in</p>
-      )}
+      )} */}
     </div>
   );
 };

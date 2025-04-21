@@ -138,12 +138,6 @@
 
 #     return {"status": status, "db_status": db_status, "message": details}
 
-
-
-
-
-
-
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ValidationError
