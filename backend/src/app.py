@@ -138,6 +138,14 @@
 
 #     return {"status": status, "db_status": db_status, "message": details}
 
+
+
+
+
+
+
+
+
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ValidationError
@@ -186,9 +194,11 @@ class TravelOption(BaseModel):
     mode: str
     distance_km: Optional[float] = None
     time_minutes: Optional[int] = None
-    co2_emission_g: Optional[int] = None
+    # --- UPDATED: Changed co2 fields to float ---
+    co2_emission_g: Optional[float] = None # Allow float for emissions
     estimated_cost: Optional[str] = None
-    co2_saved_g: Optional[int] = None
+    co2_saved_g: Optional[float] = None # Allow float for savings
+    # --- End of Update ---
     booking_link: Optional[str] = None
     is_recommended: Optional[bool] = False
 
@@ -205,9 +215,11 @@ class TravelChoice(BaseModel):
     chosen_mode: str = Field(..., alias="mode")
     distance_km: Optional[float] = None
     time_minutes: Optional[int] = None
-    co2_emission_g: Optional[int] = None
+    # --- UPDATED: Changed co2 fields to float (consistency) ---
+    co2_emission_g: Optional[float] = None # Allow float for emissions
     estimated_cost: Optional[str] = None
-    co2_saved_g: Optional[int] = None
+    co2_saved_g: Optional[float] = None # Allow float for savings
+    # --- End of Update ---
     booking_link: Optional[str] = None
 
 # --- UPDATED Pydantic Models for Chatbot ---
@@ -226,7 +238,7 @@ class ChatbotResponse(BaseModel):
 app = FastAPI(
     title="Sustainable Travel Planner API",
     description="API for comparing travel options, saving choices, and providing contextual chat assistance.",
-    version="2.2.0", # Incremented version
+    version="2.2.1", # Incremented version for float fix
     on_startup=[connect_to_mongo],
     on_shutdown=[close_mongo_connection],
 )
@@ -244,7 +256,7 @@ app.add_middleware(
 
 # --- API Endpoints ---
 
-# /compare endpoint (Keep as in v2)
+# /compare endpoint
 @app.post("/compare", response_model=List[TravelOption])
 async def compare_endpoint(request: ComparisonRequest):
     """ Receives travel details, returns list of comparable travel options. """
@@ -257,6 +269,8 @@ async def compare_endpoint(request: ComparisonRequest):
             start_location=request.start_location, end_location=request.end_location,
             preference=request.preference, user_message=request.user_message
         )
+        # The response (comparison_list) will now be validated against the updated TravelOption model
+        # which accepts floats for co2_emission_g and co2_saved_g.
         return comparison_list
     except HTTPException as http_exc: raise http_exc
     except Exception as e:
@@ -264,14 +278,19 @@ async def compare_endpoint(request: ComparisonRequest):
         detail_msg = "Internal server error during comparison."
         if "JSON" in str(e) or "format" in str(e).lower():
              detail_msg = "Error processing response from AI model. Invalid format received."
+        # Check if it's a validation error during response serialization (less likely now, but good practice)
+        elif isinstance(e, ValidationError):
+             logger.error(f"Response validation error: {e}")
+             detail_msg = "Internal server error: Response data format mismatch."
         raise HTTPException(status_code=500, detail=detail_msg)
 
-# /save_choice endpoint (Keep as in v2)
+# /save_choice endpoint
 @app.post("/save_choice", status_code=201)
 async def save_choice_endpoint(choice: TravelChoice = Body(...)):
     """ Receives user's chosen travel option and saves it to DB. """
     logger.info(f"Received choice to save: {choice.dict()}")
     try:
+        # The TravelChoice model now also accepts float for CO2 fields
         choice_dict = choice.dict(by_alias=True)
         inserted_id = await save_travel_choice(choice_dict)
         if inserted_id:
@@ -314,11 +333,12 @@ async def chatbot_endpoint(request: ChatbotRequest):
 
     try:
         # Call the new model logic function
+        # comparison_results are already List[TravelOption] which now accepts floats
         response_message = await get_chatbot_response(
             start_location=request.start_location,
             end_location=request.end_location,
             preference=request.preference,
-            comparison_results=request.comparison_results, # Pass the list of dicts directly
+            comparison_results=request.comparison_results, # Pass the list directly
             user_feedback=request.user_message
         )
 
@@ -339,7 +359,7 @@ async def chatbot_endpoint(request: ChatbotRequest):
         return ChatbotResponse(message="Sorry, something went wrong while processing your request.")
 
 
-# / root endpoint (Keep as in v2)
+# / root endpoint
 @app.get("/")
 def read_root():
     """ Root endpoint providing basic info about the API status. """
@@ -354,4 +374,12 @@ def read_root():
         db_status = "N/A (due to model init error)"
 
     return {"status": status, "ai_model_status": ai_status, "db_status": db_status, "message": details}
+
+
+
+
+
+
+
+
 
